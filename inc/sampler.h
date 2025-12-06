@@ -2,10 +2,12 @@
 #define SAMPLER_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
-void sampler_init(float *buffer_ptr);
-void sampler_add_sample(float sample);
-uint8_t sampler_buffer_full(void);
-void sampler_reset(void);
+void sampler_init(int16_t *buffer, uint16_t size);
+void sampler_add_sample(int16_t s);
+bool sampler_is_full(void);
+int16_t *sampler_get_buffer(void);
+void sampler_clear(void);
 
 #endif

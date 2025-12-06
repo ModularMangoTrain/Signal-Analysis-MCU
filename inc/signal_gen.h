@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-void signal_gen_init(float frequency, float amplitude);
-float signal_gen_next_sample(void);
+void signal_gen_init(void);
+int16_t signal_gen_next_sample(void);
 
 #endif

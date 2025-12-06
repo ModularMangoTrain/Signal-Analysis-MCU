@@ -1,38 +1,44 @@
 #include "scheduler.h"
+#include "config.h"
+#include <stdint.h>
+#include <string.h>
 
-typedef struct {
-    task_func_t func;
-    uint32_t interval_ms;
-    uint32_t last_run;
-} task_t;
-
-static task_t tasks[MAX_TASKS];
-static uint8_t task_count = 0;
-static uint32_t tick_count = 0;
+static struct {
+    task_func_t fn;
+    uint16_t period_ms;
+    uint16_t time_left;
+    uint8_t active;
+} tasks[MAX_TASKS];
 
 void scheduler_init(void) {
-    task_count = 0;
-    tick_count = 0;
+    memset(tasks, 0, sizeof(tasks));
 }
 
-void scheduler_add_task(task_func_t task, uint32_t interval_ms) {
-    if (task_count < MAX_TASKS) {
-        tasks[task_count].func = task;
-        tasks[task_count].interval_ms = interval_ms;
-        tasks[task_count].last_run = 0;
-        task_count++;
+int scheduler_add_task(task_func_t fn, uint16_t period_ms) {
+    for(int i=0;i<MAX_TASKS;i++) {
+        if(!tasks[i].active) {
+            tasks[i].fn = fn;
+            tasks[i].period_ms = period_ms;
+            tasks[i].time_left = period_ms;
+            tasks[i].active = 1;
+            return i;
+        }
+    }
+    return -1;
+}
+
+void scheduler_tick(void) {
+    for(int i=0;i<MAX_TASKS;i++) {
+        if(tasks[i].active && tasks[i].time_left > 0)
+            tasks[i].time_left--;
     }
 }
 
-void scheduler_run(void) {
-    while (1) {
-        tick_count++;
-        
-        for (uint8_t i = 0; i < task_count; i++) {
-            if ((tick_count - tasks[i].last_run) >= tasks[i].interval_ms) {
-                tasks[i].func();
-                tasks[i].last_run = tick_count;
-            }
+void scheduler_dispatch(void) {
+    for(int i=0;i<MAX_TASKS;i++) {
+        if(tasks[i].active && tasks[i].time_left == 0) {
+            if(tasks[i].fn) tasks[i].fn();
+            tasks[i].time_left = tasks[i].period_ms;
         }
     }
 }

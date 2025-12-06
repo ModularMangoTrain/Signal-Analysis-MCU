@@ -10,7 +10,8 @@
 typedef void (*task_func_t)(void);
 
 void scheduler_init(void);
-void scheduler_add_task(task_func_t task, uint32_t interval_ms);
-void scheduler_run(void);
+int scheduler_add_task(task_func_t fn, uint16_t period_ms);
+void scheduler_tick(void);
+void scheduler_dispatch(void);
 
 #endif
