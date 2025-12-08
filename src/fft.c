@@ -1,3 +1,10 @@
+/**
+ * @file fft.c
+ * @brief FFT implementation using Cooley-Tukey radix-2 algorithm
+ * @author Signal Analysis MCU Project
+ * @date 2024
+ */
+
 #include "fft.h"
 #include "sampler.h"
 #include "signal_gen.h"
@@ -5,16 +12,31 @@
 #include "config.h"
 
 #include <stdio.h>
+#include <avr/io.h>
+#include <avr/interrupt.h>
 
-/* Simple blocking FFT implementation (complex, radix-2 iterative) */
-
+/** @brief Real component buffer for FFT computation */
 static float real[FFT_SIZE];
+
+/** @brief Imaginary component buffer for FFT computation */
 static float imag[FFT_SIZE];
 
-/* Pre-computed trig table for 128-point FFT */
+/** @brief Pre-computed cosine twiddle factors for 7 FFT stages */
 static const float cos_table[7] = {-1.0f, -0.707107f, -0.382683f, -0.195090f, -0.098017f, -0.049068f, -0.024541f};
+
+/** @brief Pre-computed sine twiddle factors for 7 FFT stages */
 static const float sin_table[7] = {0.0f, -0.707107f, -0.923880f, -0.980785f, -0.995185f, -0.998795f, -0.999699f};
 
+/**
+ * @brief Compute in-place FFT using Cooley-Tukey radix-2 algorithm
+ * 
+ * @param[in,out] re Real component array (input: time-domain, output: frequency-domain)
+ * @param[in,out] im Imaginary component array (input: zeros, output: frequency-domain)
+ * @param[in] n Number of samples (must be power of 2)
+ * 
+ * @details Performs bit-reversal reordering followed by 7 butterfly stages.
+ *          Uses pre-computed twiddle factors to avoid runtime trigonometric calculations.
+ */
 static void fft_compute(float *re, float *im, uint16_t n) {
     /* bit-reverse reorder */
     uint16_t i, j, k;
@@ -56,19 +78,41 @@ static void fft_compute(float *re, float *im, uint16_t n) {
     }
 }
 
+/**
+ * @brief Initialize FFT task module
+ * @return void
+ */
 void fft_task_init(void) {
     /* nothing for now */
 }
 
+/**
+ * @brief Execute FFT analysis on sampled data and output peak frequency
+ * 
+ * @details Waits for sampler buffer to fill, then:
+ *          1. Copies samples to FFT buffers (interrupts disabled)
+ *          2. Performs 128-point FFT
+ *          3. Finds peak frequency bin
+ *          4. Outputs result via UART
+ * 
+ * @note Called periodically by scheduler (every 128ms)
+ * @warning Disables interrupts during buffer copy to prevent corruption
+ * 
+ * @see sampler_is_full(), fft_compute()
+ */
 void fft_task_run(void) {
     if(!sampler_is_full()) return;
 
     int16_t *buf = sampler_get_buffer();
-    /* copy into float arrays */
+    
+    // Copy buffer with interrupts disabled to prevent corruption
+    cli();
     for(uint16_t i = 0; i < FFT_SIZE; ++i) {
         real[i] = (float)buf[i];
         imag[i] = 0.0f;
     }
+    sampler_clear();  // Clear while interrupts disabled
+    sei();
 
     fft_compute(real, imag, FFT_SIZE);
 
@@ -87,7 +131,4 @@ void fft_task_run(void) {
     char bufstr[64];
     int len = snprintf(bufstr, sizeof(bufstr), "FFT peak: bin=%u freq=%u Hz\r\n", (unsigned)peak_bin, (unsigned)peak_freq);
     uart_send_binary((uint8_t*)bufstr, len);
-
-    /* clear sampler to collect next block */
-    sampler_clear();
 }

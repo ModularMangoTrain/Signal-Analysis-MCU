@@ -5,8 +5,8 @@
 
 static int16_t *buf_ptr = 0;
 static uint16_t buf_size = 0;
-static uint16_t write_idx = 0;
-static uint8_t full_flag = 0;
+static volatile uint16_t write_idx = 0;
+static volatile uint8_t full_flag = 0;
 
 void sampler_init(int16_t *buffer, uint16_t size) {
     buf_ptr = buffer;
@@ -34,5 +34,6 @@ int16_t *sampler_get_buffer(void) {
 }
 
 void sampler_clear(void) {
+    write_idx = 0;  // Reset write position
     full_flag = 0;
 }

@@ -32,14 +32,13 @@ int main(void) {
 
     DDRB |= (1<<PB0);
 
-    scheduler_add_task(sample_task, 1);        // 1ms = 1000 Hz sampling
-    scheduler_add_task(fft_task_run, 50);      // FFT every 50ms
+    scheduler_add_task(fft_task_run, 128);     // FFT every 128ms (after 128 samples)
     scheduler_add_task(blink_task, 500);       // Blink every 500ms
 
     uart_puts("Entering main loop\r\n");
     while(1) {
         scheduler_dispatch();
-        _delay_ms(1);
+        // Sample from ISR, not here
     }
     return 0;
 }

@@ -1,0 +1,15 @@
+# Doxyfile for Signal Analysis MCU
+
+PROJECT_NAME           = "Signal Analysis MCU"
+PROJECT_BRIEF          = "Real-Time DSP Engine for Embedded Systems"
+OUTPUT_DIRECTORY       = docs
+INPUT                  = main.c inc src README.md
+RECURSIVE              = YES
+EXTRACT_ALL            = YES
+EXTRACT_STATIC         = YES
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+HTML_OUTPUT            = html
+USE_MDFILE_AS_MAINPAGE = README.md
+OPTIMIZE_OUTPUT_FOR_C  = YES
+JAVADOC_AUTOBRIEF      = YES
